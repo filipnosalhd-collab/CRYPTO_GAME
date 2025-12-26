@@ -763,7 +763,7 @@
       }
 
       .qr-container {
-        background: white;
+        background: #ffffff;
         padding: 20px;
         border-radius: 16px;
         display: inline-block;
@@ -1283,6 +1283,39 @@
         box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
       }
 
+      .transfer-code {
+        background: var(--bg-dark);
+        border: 2px solid var(--gold);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.5rem;
+        letter-spacing: 3px;
+        color: var(--gold);
+        word-break: break-all;
+      }
+
+      .transfer-input {
+        width: 100%;
+        max-width: 300px;
+        padding: 15px 20px;
+        background: var(--bg-dark);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        color: var(--text);
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.2rem;
+        text-align: center;
+        letter-spacing: 2px;
+        margin: 20px 0;
+      }
+
+      .transfer-input:focus {
+        outline: none;
+        border-color: var(--green);
+      }
+
       /* Responsywność */
       @media (max-width: 768px) {
         .header-content {
@@ -1717,18 +1750,13 @@
             </button>
           </div>
           <div id="qrDisplay" style="display: none">
-            <p class="transfer-instructions">
-              Przyłóż telefon drugiej osoby do ekranu.<br />Kod jest niewidoczny
-              dla oka, ale kamera go odczyta.
-            </p>
+            <p class="transfer-instructions">Zeskanuj kod telefonem odbiorcy</p>
             <div class="qr-container">
               <canvas id="qrCode" width="200" height="200"></canvas>
             </div>
           </div>
           <div id="scannerDisplay" style="display: none">
-            <p class="transfer-instructions">
-              Przyłóż telefon do ekranu nadawcy
-            </p>
+            <p class="transfer-instructions">Skieruj kamerę na kod QR</p>
             <div class="camera-preview">
               <video id="cameraPreview" autoplay playsinline></video>
               <div class="camera-overlay"></div>
@@ -1738,8 +1766,6 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
       // Game State
       let gameState = {
@@ -3459,29 +3485,96 @@
         document.getElementById("qrDisplay").style.display = "block";
 
         const data = {
-          type: "CRYPTOGAME",
-          item: currentTransferItem,
-          ts: Date.now(),
-          id: Math.random().toString(36).slice(2),
+          t: "CG",
+          i: currentTransferItem.id,
+          n: currentTransferItem.name,
+          e: currentTransferItem.emoji,
+          c: currentTransferItem.cat,
+          p: currentTransferItem.price,
         };
 
-        // Generuj niewidoczny QR - jasny wzór na białym tle
         const canvas = document.getElementById("qrCode");
-        QRCode.toCanvas(
-          canvas,
-          JSON.stringify(data),
-          {
-            width: 200,
-            margin: 2,
-            color: {
-              dark: "#f0f0f0", // Bardzo jasny szary - prawie niewidoczny
-              light: "#ffffff", // Białe tło
-            },
-          },
-          function (error) {
-            if (error) console.error(error);
+        generateQR(canvas, JSON.stringify(data));
+      }
+
+      // Własny generator QR (wersja 2, 25x25)
+      function generateQR(canvas, text) {
+        const size = 200;
+        const modules = 25;
+        const cellSize = size / modules;
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = size;
+        canvas.height = size;
+
+        // Białe tło
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, size, size);
+
+        // Czarny kolor dla modułów
+        ctx.fillStyle = "#000000";
+
+        // Funkcja rysowania markera pozycyjnego
+        function drawFinder(x, y) {
+          // Zewnętrzny kwadrat 7x7
+          ctx.fillRect(x * cellSize, y * cellSize, 7 * cellSize, 7 * cellSize);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(
+            (x + 1) * cellSize,
+            (y + 1) * cellSize,
+            5 * cellSize,
+            5 * cellSize
+          );
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(
+            (x + 2) * cellSize,
+            (y + 2) * cellSize,
+            3 * cellSize,
+            3 * cellSize
+          );
+        }
+
+        // Rysuj 3 markery pozycyjne
+        drawFinder(0, 0);
+        drawFinder(modules - 7, 0);
+        drawFinder(0, modules - 7);
+
+        // Linie synchronizacji
+        for (let i = 8; i < modules - 8; i++) {
+          if (i % 2 === 0) {
+            ctx.fillRect(i * cellSize, 6 * cellSize, cellSize, cellSize);
+            ctx.fillRect(6 * cellSize, i * cellSize, cellSize, cellSize);
           }
-        );
+        }
+
+        // Koduj dane jako wzór
+        const bytes = [];
+        for (let i = 0; i < text.length; i++) {
+          bytes.push(text.charCodeAt(i));
+        }
+
+        let bitIndex = 0;
+        for (let y = 0; y < modules; y++) {
+          for (let x = 0; x < modules; x++) {
+            // Pomiń markery i linie synchronizacji
+            if (
+              (x < 8 && y < 8) ||
+              (x >= modules - 8 && y < 8) ||
+              (x < 8 && y >= modules - 8)
+            )
+              continue;
+            if (x === 6 || y === 6) continue;
+
+            const byteIdx = Math.floor(bitIndex / 8) % bytes.length;
+            const bitPos = bitIndex % 8;
+            const bit = (bytes[byteIdx] >> (7 - bitPos)) & 1;
+
+            if (bit) {
+              ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            }
+            bitIndex++;
+          }
+        }
       }
 
       async function startScanning() {
@@ -3490,18 +3583,12 @@
 
         try {
           videoStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: "environment",
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
+            video: { facingMode: "environment" },
           });
           const video = document.getElementById("cameraPreview");
           video.srcObject = videoStream;
-          video.setAttribute("playsinline", true);
           video.play();
-
-          requestAnimationFrame(scanLoop);
+          scanLoop();
         } catch (e) {
           notify("Brak dostępu do kamery", "error");
           closeTransferModal();
@@ -3518,78 +3605,148 @@
         }
 
         const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        const ctx = canvas.getContext("2d");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const decoded = decodeQR(imageData);
 
-        // Wzmocnij kontrast dla wykrycia subtelnych różnic
-        const enhanced = enhanceContrast(imageData);
-
-        const code = jsQR(enhanced.data, enhanced.width, enhanced.height, {
-          inversionAttempts: "attemptBoth",
-        });
-
-        if (code) {
+        if (decoded) {
           try {
-            const data = JSON.parse(code.data);
-            if (data.type === "CRYPTOGAME" && data.item) {
-              receiveItem(data);
+            const data = JSON.parse(decoded);
+            if (data.t === "CG" && data.i) {
+              receiveItem({
+                item: {
+                  id: data.i,
+                  name: data.n,
+                  emoji: data.e,
+                  cat: data.c,
+                  price: data.p,
+                },
+              });
               return;
             }
-          } catch (e) {
-            // Nieprawidłowy format - kontynuuj skanowanie
-          }
+          } catch (e) {}
         }
 
         requestAnimationFrame(scanLoop);
       }
 
-      function enhanceContrast(imageData) {
+      // Prosty dekoder QR
+      function decodeQR(imageData) {
+        const width = imageData.width;
+        const height = imageData.height;
         const data = imageData.data;
-        const enhanced = new Uint8ClampedArray(data.length);
 
-        // Znajdź min/max jasności
-        let min = 255,
-          max = 0;
+        // Konwertuj na czarno-biały
+        const bw = [];
         for (let i = 0; i < data.length; i += 4) {
           const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-          if (brightness < min) min = brightness;
-          if (brightness > max) max = brightness;
+          bw.push(brightness < 128 ? 1 : 0);
         }
 
-        // Rozciągnij kontrast - nawet małe różnice staną się widoczne
-        const range = max - min || 1;
-        for (let i = 0; i < data.length; i += 4) {
-          const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-          const normalized = ((brightness - min) / range) * 255;
+        // Szukaj wzorca finder pattern (7x7 z 1:1:3:1:1)
+        const modules = 25;
+        let found = false;
+        let startX = 0,
+          startY = 0,
+          cellSize = 0;
 
-          // Binaryzacja - próg w połowie zakresu
-          const threshold = 128;
-          const value = normalized < threshold ? 0 : 255;
-
-          enhanced[i] = value;
-          enhanced[i + 1] = value;
-          enhanced[i + 2] = value;
-          enhanced[i + 3] = 255;
+        // Skanuj w poszukiwaniu lewego górnego markera
+        for (let y = 0; y < height - 50 && !found; y += 2) {
+          for (let x = 0; x < width - 50 && !found; x += 2) {
+            const idx = y * width + x;
+            if (bw[idx] === 1) {
+              // Potencjalny początek markera - sprawdź wzorzec
+              const testSize = findFinderSize(bw, width, height, x, y);
+              if (testSize > 5) {
+                startX = x;
+                startY = y;
+                cellSize = testSize / 7;
+                found = true;
+              }
+            }
+          }
         }
 
-        return new ImageData(enhanced, imageData.width, imageData.height);
+        if (!found || cellSize < 2) return null;
+
+        // Odczytaj dane
+        const bytes = [];
+        let currentByte = 0;
+        let bitCount = 0;
+
+        for (let my = 0; my < modules; my++) {
+          for (let mx = 0; mx < modules; mx++) {
+            // Pomiń markery i linie synchronizacji
+            if (
+              (mx < 8 && my < 8) ||
+              (mx >= modules - 8 && my < 8) ||
+              (mx < 8 && my >= modules - 8)
+            )
+              continue;
+            if (mx === 6 || my === 6) continue;
+
+            const px = Math.floor(startX + mx * cellSize + cellSize / 2);
+            const py = Math.floor(startY + my * cellSize + cellSize / 2);
+
+            if (px >= 0 && px < width && py >= 0 && py < height) {
+              const bit = bw[py * width + px];
+              currentByte = (currentByte << 1) | bit;
+              bitCount++;
+
+              if (bitCount === 8) {
+                if (currentByte > 0 && currentByte < 128) {
+                  bytes.push(currentByte);
+                }
+                currentByte = 0;
+                bitCount = 0;
+              }
+            }
+          }
+        }
+
+        if (bytes.length === 0) return null;
+
+        // Konwertuj na string
+        let result = "";
+        for (let i = 0; i < bytes.length; i++) {
+          result += String.fromCharCode(bytes[i]);
+        }
+
+        // Sprawdź czy to JSON
+        const jsonStart = result.indexOf("{");
+        const jsonEnd = result.lastIndexOf("}");
+        if (jsonStart >= 0 && jsonEnd > jsonStart) {
+          return result.substring(jsonStart, jsonEnd + 1);
+        }
+
+        return null;
+      }
+
+      function findFinderSize(bw, width, height, startX, startY) {
+        // Znajdź szerokość czarnego paska
+        let x = startX;
+        while (x < width && bw[startY * width + x] === 1) x++;
+        const blackWidth = x - startX;
+
+        if (blackWidth < 3) return 0;
+
+        // Sprawdź czy to wzorzec 7 modułów
+        return blackWidth;
       }
 
       function receiveItem(data) {
         stopCamera();
 
-        // Sprawdź czy już nie masz tego przedmiotu
         if (gameState.inventory.some((i) => i.id === data.item.id)) {
           notify("Już posiadasz ten przedmiot!", "error");
           closeTransferModal();
           return;
         }
 
-        // Dodaj przedmiot do ekwipunku
         gameState.inventory.push({
           id: data.item.id,
           name: data.item.name,
