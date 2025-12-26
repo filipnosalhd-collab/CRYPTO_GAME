@@ -1718,14 +1718,17 @@
           </div>
           <div id="qrDisplay" style="display: none">
             <p class="transfer-instructions">
-              Pokaż ten kod QR drugiej osobie do zeskanowania
+              Przyłóż telefon drugiej osoby do ekranu.<br />Kod jest niewidoczny
+              dla oka, ale kamera go odczyta.
             </p>
             <div class="qr-container">
               <canvas id="qrCode" width="200" height="200"></canvas>
             </div>
           </div>
           <div id="scannerDisplay" style="display: none">
-            <p class="transfer-instructions">Skieruj kamerę na kod QR</p>
+            <p class="transfer-instructions">
+              Przyłóż telefon do ekranu nadawcy
+            </p>
             <div class="camera-preview">
               <video id="cameraPreview" autoplay playsinline></video>
               <div class="camera-overlay"></div>
@@ -1736,6 +1739,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
       // Game State
       let gameState = {
@@ -3461,13 +3465,21 @@
           id: Math.random().toString(36).slice(2),
         };
 
+        // Generuj niewidoczny QR - jasny wzór na białym tle
+        const canvas = document.getElementById("qrCode");
         QRCode.toCanvas(
-          document.getElementById("qrCode"),
+          canvas,
           JSON.stringify(data),
           {
             width: 200,
             margin: 2,
-            color: { dark: "#000", light: "#fff" },
+            color: {
+              dark: "#f0f0f0", // Bardzo jasny szary - prawie niewidoczny
+              light: "#ffffff", // Białe tło
+            },
+          },
+          function (error) {
+            if (error) console.error(error);
           }
         );
       }
@@ -3478,14 +3490,119 @@
 
         try {
           videoStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
           });
-          document.getElementById("cameraPreview").srcObject = videoStream;
-          notify("Kamera aktywna - szukam kodu QR...", "success");
+          const video = document.getElementById("cameraPreview");
+          video.srcObject = videoStream;
+          video.setAttribute("playsinline", true);
+          video.play();
+
+          requestAnimationFrame(scanLoop);
         } catch (e) {
           notify("Brak dostępu do kamery", "error");
           closeTransferModal();
         }
+      }
+
+      function scanLoop() {
+        if (!videoStream) return;
+
+        const video = document.getElementById("cameraPreview");
+        if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+          requestAnimationFrame(scanLoop);
+          return;
+        }
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Wzmocnij kontrast dla wykrycia subtelnych różnic
+        const enhanced = enhanceContrast(imageData);
+
+        const code = jsQR(enhanced.data, enhanced.width, enhanced.height, {
+          inversionAttempts: "attemptBoth",
+        });
+
+        if (code) {
+          try {
+            const data = JSON.parse(code.data);
+            if (data.type === "CRYPTOGAME" && data.item) {
+              receiveItem(data);
+              return;
+            }
+          } catch (e) {
+            // Nieprawidłowy format - kontynuuj skanowanie
+          }
+        }
+
+        requestAnimationFrame(scanLoop);
+      }
+
+      function enhanceContrast(imageData) {
+        const data = imageData.data;
+        const enhanced = new Uint8ClampedArray(data.length);
+
+        // Znajdź min/max jasności
+        let min = 255,
+          max = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+          if (brightness < min) min = brightness;
+          if (brightness > max) max = brightness;
+        }
+
+        // Rozciągnij kontrast - nawet małe różnice staną się widoczne
+        const range = max - min || 1;
+        for (let i = 0; i < data.length; i += 4) {
+          const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+          const normalized = ((brightness - min) / range) * 255;
+
+          // Binaryzacja - próg w połowie zakresu
+          const threshold = 128;
+          const value = normalized < threshold ? 0 : 255;
+
+          enhanced[i] = value;
+          enhanced[i + 1] = value;
+          enhanced[i + 2] = value;
+          enhanced[i + 3] = 255;
+        }
+
+        return new ImageData(enhanced, imageData.width, imageData.height);
+      }
+
+      function receiveItem(data) {
+        stopCamera();
+
+        // Sprawdź czy już nie masz tego przedmiotu
+        if (gameState.inventory.some((i) => i.id === data.item.id)) {
+          notify("Już posiadasz ten przedmiot!", "error");
+          closeTransferModal();
+          return;
+        }
+
+        // Dodaj przedmiot do ekwipunku
+        gameState.inventory.push({
+          id: data.item.id,
+          name: data.item.name,
+          emoji: data.item.emoji,
+          cat: data.item.cat,
+          price: data.item.price,
+          receivedAt: Date.now(),
+        });
+
+        notify(`Otrzymano ${data.item.name}!`, "success");
+        closeTransferModal();
+        updateUI();
+        saveGame();
       }
 
       function stopCamera() {
