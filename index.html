@@ -1,0 +1,3813 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>CryptoGame - Trading Simulator</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg-dark: #0a0a0f;
+        --bg-card: #12121a;
+        --bg-hover: #1a1a25;
+        --green: #00ff88;
+        --red: #ff3366;
+        --gold: #ffd700;
+        --blue: #00d4ff;
+        --purple: #9945ff;
+        --text: #ffffff;
+        --text-dim: #8888aa;
+        --border: #2a2a3a;
+      }
+
+      body {
+        font-family: "Rajdhani", sans-serif;
+        background: var(--bg-dark);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .bg-grid {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        background-image: linear-gradient(
+            rgba(0, 255, 136, 0.03) 1px,
+            transparent 1px
+          ),
+          linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+        background-size: 50px 50px;
+      }
+
+      header {
+        position: relative;
+        z-index: 10;
+        background: rgba(10, 10, 15, 0.95);
+        border-bottom: 1px solid var(--border);
+        padding: 15px 20px;
+        backdrop-filter: blur(10px);
+      }
+
+      .header-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+
+      .logo {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.8rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, var(--gold), var(--green));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .balance-display {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .balance-item {
+        background: var(--bg-card);
+        padding: 10px 20px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+
+      .balance-label {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+      }
+
+      .balance-value {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--gold);
+      }
+
+      nav {
+        position: relative;
+        z-index: 10;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border);
+        padding: 0 20px;
+        overflow-x: auto;
+      }
+
+      .nav-tabs {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        gap: 5px;
+      }
+
+      .nav-tab {
+        padding: 15px 25px;
+        background: transparent;
+        border: none;
+        color: var(--text-dim);
+        font-family: "Rajdhani", sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+        white-space: nowrap;
+      }
+
+      .nav-tab:hover {
+        color: var(--text);
+      }
+      .nav-tab.active {
+        color: var(--green);
+      }
+      .nav-tab.active::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, var(--green), var(--blue));
+      }
+
+      main {
+        position: relative;
+        z-index: 5;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .section {
+        display: none;
+      }
+      .section.active {
+        display: block;
+        animation: fadeIn 0.3s;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .search-box {
+        margin-bottom: 20px;
+      }
+
+      .search-input {
+        width: 100%;
+        max-width: 400px;
+        padding: 12px 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 25px;
+        color: var(--text);
+        font-family: "Rajdhani", sans-serif;
+        font-size: 1rem;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: var(--green);
+      }
+
+      .crypto-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+      }
+
+      .crypto-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .crypto-card:hover {
+        background: var(--bg-hover);
+        border-color: var(--green);
+        transform: translateY(-3px);
+      }
+
+      .crypto-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+      }
+
+      .crypto-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .crypto-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Orbitron", sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--bg-dark);
+      }
+
+      .crypto-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+      .crypto-symbol {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+      }
+
+      .crypto-rank {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: var(--text-dim);
+      }
+
+      .crypto-price {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .crypto-change {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 600;
+      }
+
+      .crypto-change.positive {
+        color: var(--green);
+      }
+      .crypto-change.negative {
+        color: var(--red);
+      }
+
+      .mini-chart {
+        height: 50px;
+        margin-top: 15px;
+      }
+
+      .mini-chart canvas {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .modal-overlay.active {
+        display: flex;
+      }
+
+      .modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 900px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        padding: 25px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        background: var(--bg-card);
+        z-index: 10;
+      }
+
+      .modal-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .modal-close {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: var(--text);
+        font-size: 1.5rem;
+        cursor: pointer;
+      }
+
+      .modal-close:hover {
+        background: var(--red);
+      }
+
+      .modal-body {
+        padding: 25px;
+      }
+
+      .chart-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chart-stat {
+        text-align: center;
+      }
+      .chart-stat-label {
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+      }
+      .chart-stat-value {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+      .chart-stat-value.high {
+        color: var(--green);
+      }
+      .chart-stat-value.low {
+        color: var(--red);
+      }
+
+      .chart-container {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 25px;
+        height: 250px;
+      }
+
+      .chart-container canvas {
+        width: 100%;
+        height: 100%;
+      }
+
+      .trading-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      @media (max-width: 600px) {
+        .trading-form {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .trade-section {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 16px;
+        padding: 20px;
+      }
+
+      .trade-section.buy {
+        border: 1px solid rgba(0, 255, 136, 0.3);
+      }
+      .trade-section.sell {
+        border: 1px solid rgba(255, 51, 102, 0.3);
+      }
+
+      .trade-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+      }
+      .trade-title.buy {
+        color: var(--green);
+      }
+      .trade-title.sell {
+        color: var(--red);
+      }
+
+      .input-group {
+        margin-bottom: 15px;
+      }
+      .input-label {
+        display: block;
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+
+      .input-field {
+        width: 100%;
+        padding: 12px 15px;
+        background: var(--bg-dark);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        font-family: "Orbitron", sans-serif;
+        font-size: 1rem;
+      }
+
+      .input-field:focus {
+        outline: none;
+        border-color: var(--green);
+      }
+
+      .trade-total {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .trade-btn {
+        width: 100%;
+        padding: 15px;
+        border: none;
+        border-radius: 12px;
+        font-family: "Rajdhani", sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+
+      .trade-btn.buy {
+        background: linear-gradient(135deg, var(--green), #00cc6a);
+        color: var(--bg-dark);
+      }
+
+      .trade-btn.sell {
+        background: linear-gradient(135deg, var(--red), #cc0033);
+        color: white;
+      }
+
+      .trade-btn:hover {
+        transform: translateY(-2px);
+      }
+      .trade-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Portfolio */
+      .portfolio-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+
+      .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+      }
+      .stat-value {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+      }
+      .stat-label {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+      }
+
+      .portfolio-table {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      .table-header {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        padding: 15px 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+      }
+
+      .table-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      .table-row:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .table-row:last-child {
+        border-bottom: none;
+      }
+
+      @media (max-width: 600px) {
+        .table-header,
+        .table-row {
+          grid-template-columns: 1fr 1fr;
+        }
+        .table-header > *:nth-child(3),
+        .table-header > *:nth-child(4),
+        .table-row > *:nth-child(3),
+        .table-row > *:nth-child(4) {
+          display: none;
+        }
+      }
+
+      /* Shop */
+      .shop-categories {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+      }
+
+      .category-btn {
+        padding: 10px 25px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 25px;
+        color: var(--text-dim);
+        font-family: "Rajdhani", sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .category-btn:hover {
+        border-color: var(--gold);
+        color: var(--gold);
+      }
+
+      .category-btn.active {
+        background: linear-gradient(135deg, var(--gold), #cc9900);
+        color: var(--bg-dark);
+        border-color: transparent;
+      }
+
+      .shop-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 20px;
+      }
+
+      .shop-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+        transition: all 0.3s;
+      }
+
+      .shop-item:hover {
+        transform: translateY(-5px);
+        border-color: var(--gold);
+      }
+
+      .shop-item-image {
+        height: 150px;
+        background: linear-gradient(135deg, #1a1a25, #0a0a0f);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+      }
+
+      .shop-item-content {
+        padding: 20px;
+      }
+      .shop-item-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+      }
+      .shop-item-desc {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+      }
+      .shop-item-price {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--gold);
+        margin-bottom: 15px;
+      }
+
+      .shop-btn {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, var(--gold), #cc9900);
+        border: none;
+        border-radius: 10px;
+        color: var(--bg-dark);
+        font-family: "Rajdhani", sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .shop-btn:hover {
+        transform: translateY(-2px);
+      }
+      .shop-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .shop-btn.owned {
+        background: var(--green);
+      }
+
+      /* Inventory */
+      .inventory-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 20px;
+      }
+
+      .inventory-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .inventory-icon {
+        font-size: 3.5rem;
+        margin-bottom: 15px;
+      }
+      .inventory-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+      .inventory-value {
+        color: var(--gold);
+        font-family: "Orbitron", sans-serif;
+        margin-bottom: 15px;
+      }
+
+      .inv-btn {
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        margin: 5px;
+      }
+
+      .sell-btn {
+        background: transparent;
+        border: 2px solid var(--purple);
+        color: var(--purple);
+      }
+
+      .sell-btn:hover {
+        background: var(--purple);
+        color: white;
+      }
+
+      .transfer-btn {
+        background: linear-gradient(135deg, var(--blue), var(--purple));
+        border: none;
+        color: white;
+      }
+
+      /* Transfer modal */
+      .transfer-content {
+        text-align: center;
+        padding: 20px;
+      }
+      .transfer-instructions {
+        color: var(--text-dim);
+        margin: 20px 0;
+        line-height: 1.6;
+      }
+
+      .qr-container {
+        background: white;
+        padding: 20px;
+        border-radius: 16px;
+        display: inline-block;
+        margin: 20px 0;
+      }
+
+      .camera-preview {
+        width: 100%;
+        max-width: 350px;
+        height: 280px;
+        background: #000;
+        border-radius: 16px;
+        margin: 20px auto;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .camera-preview video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .camera-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 180px;
+        height: 180px;
+        border: 3px solid var(--green);
+        border-radius: 16px;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .mode-btn {
+        padding: 15px 40px;
+        background: linear-gradient(135deg, var(--blue), var(--purple));
+        border: none;
+        border-radius: 30px;
+        color: white;
+        font-family: "Rajdhani", sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        margin: 10px;
+      }
+
+      .mode-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      /* Notification */
+      .notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        z-index: 2000;
+        animation: slideIn 0.3s ease;
+        max-width: 350px;
+      }
+
+      .notification.success {
+        border-color: var(--green);
+      }
+      .notification.error {
+        border-color: var(--red);
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-dim);
+      }
+
+      .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+      }
+
+      /* Clicker styles */
+      .clicker-container {
+        max-width: 600px;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .clicker-stats {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      }
+
+      .clicker-stat {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 15px 25px;
+        min-width: 140px;
+      }
+
+      .clicker-stat-label {
+        display: block;
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .clicker-stat-value {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--green);
+      }
+
+      .click-card {
+        position: relative;
+        width: 320px;
+        height: 200px;
+        margin: 0 auto 30px;
+        cursor: pointer;
+        transition: transform 0.1s;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .click-card:hover {
+        transform: scale(1.02);
+      }
+
+      .click-card:active {
+        transform: scale(0.95);
+      }
+
+      .card-glow {
+        position: absolute;
+        top: -20px;
+        left: -20px;
+        right: -20px;
+        bottom: -20px;
+        background: radial-gradient(
+          circle,
+          rgba(255, 215, 0, 0.3) 0%,
+          transparent 70%
+        );
+        border-radius: 30px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+
+      .click-card:active .card-glow {
+        opacity: 1;
+      }
+
+      .card-content {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          135deg,
+          #1a1a2e 0%,
+          #16213e 50%,
+          #0f3460 100%
+        );
+        border-radius: 20px;
+        border: 2px solid var(--gold);
+        padding: 25px;
+        box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+
+      .card-content::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 200%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.1),
+          transparent
+        );
+        animation: cardShine 3s infinite;
+      }
+
+      @keyframes cardShine {
+        0% {
+          left: -100%;
+        }
+        50%,
+        100% {
+          left: 100%;
+        }
+      }
+
+      .card-icon {
+        position: absolute;
+        top: 20px;
+        right: 25px;
+        font-size: 2.5rem;
+      }
+
+      .card-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.4rem;
+        font-weight: 900;
+        color: var(--gold);
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.5),
+          0 2px 4px rgba(0, 0, 0, 0.5);
+        margin-bottom: 5px;
+      }
+
+      .card-subtitle {
+        font-size: 0.8rem;
+        color: #ffffff;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      .card-chip {
+        position: absolute;
+        bottom: 60px;
+        left: 25px;
+        font-size: 2rem;
+      }
+
+      .card-number {
+        position: absolute;
+        bottom: 25px;
+        left: 25px;
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.1rem;
+        color: #ffffff;
+        letter-spacing: 3px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      .click-feedback {
+        position: relative;
+        height: 40px;
+        margin-bottom: 30px;
+        pointer-events: none;
+      }
+
+      .click-popup {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gold);
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        animation: popUp 0.8s ease-out forwards;
+        pointer-events: none;
+      }
+
+      @keyframes popUp {
+        0% {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-50px);
+        }
+      }
+
+      .upgrades-section {
+        margin-top: 20px;
+      }
+
+      .upgrades-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        color: var(--text);
+      }
+
+      .upgrades-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 15px;
+        text-align: left;
+      }
+
+      .upgrade-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s;
+      }
+
+      .upgrade-card:hover {
+        border-color: var(--purple);
+      }
+
+      .upgrade-card.maxed {
+        border-color: var(--gold);
+        background: linear-gradient(
+          135deg,
+          var(--bg-card),
+          rgba(255, 215, 0, 0.1)
+        );
+      }
+
+      .upgrade-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+      }
+
+      .upgrade-icon {
+        font-size: 2rem;
+        margin-right: 10px;
+      }
+
+      .upgrade-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 3px;
+      }
+
+      .upgrade-desc {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+      }
+
+      .upgrade-level {
+        background: var(--purple);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .upgrade-level.max {
+        background: var(--gold);
+        color: var(--bg-dark);
+      }
+
+      .upgrade-effect {
+        margin: 15px 0;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.9rem;
+        color: var(--green);
+      }
+
+      .upgrade-btn {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, var(--purple), #7928ca);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-family: "Rajdhani", sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .upgrade-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(153, 69, 255, 0.4);
+      }
+
+      .upgrade-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .upgrade-btn.maxed {
+        background: var(--gold);
+        color: var(--bg-dark);
+      }
+
+      /* Card skins */
+      .card-skins-section {
+        margin: 30px 0;
+        padding: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+      }
+
+      .skins-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+        color: var(--text);
+      }
+
+      .skins-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+      }
+
+      .skin-item {
+        position: relative;
+        height: 80px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 3px solid transparent;
+        overflow: hidden;
+      }
+
+      .skin-item:hover {
+        transform: scale(1.05);
+      }
+
+      .skin-item.active {
+        border-color: var(--gold);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+      }
+
+      .skin-item.locked {
+        opacity: 0.6;
+      }
+
+      .skin-item.locked::after {
+        content: "🔒";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.5rem;
+      }
+
+      .skin-price {
+        position: absolute;
+        bottom: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-family: "Orbitron", sans-serif;
+        color: var(--gold);
+      }
+
+      .skin-name {
+        position: absolute;
+        top: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+      }
+
+      /* Receive section */
+      .receive-section {
+        grid-column: 1 / -1;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .receive-btn {
+        padding: 15px 40px;
+        background: linear-gradient(135deg, var(--green), #00cc6a);
+        border: none;
+        border-radius: 30px;
+        color: var(--bg-dark);
+        font-family: "Rajdhani", sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .receive-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+      }
+
+      /* Responsywność */
+      @media (max-width: 768px) {
+        .header-content {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .balance-display {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .balance-item {
+          flex: 1;
+          min-width: 120px;
+        }
+
+        .nav-tabs {
+          justify-content: flex-start;
+          padding-bottom: 5px;
+        }
+
+        .nav-tab {
+          padding: 12px 15px;
+          font-size: 0.9rem;
+        }
+
+        .clicker-stats {
+          gap: 10px;
+        }
+
+        .clicker-stat {
+          padding: 10px 15px;
+          min-width: 100px;
+        }
+
+        .clicker-stat-value {
+          font-size: 1rem;
+        }
+
+        .click-card {
+          width: 280px;
+          height: 175px;
+        }
+
+        .card-title {
+          font-size: 1.2rem;
+        }
+
+        .card-number {
+          font-size: 0.9rem;
+        }
+
+        .upgrades-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .skins-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
+        .crypto-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .shop-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .inventory-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .trading-form {
+          grid-template-columns: 1fr;
+        }
+
+        .chart-container {
+          height: 200px;
+        }
+
+        .modal {
+          margin: 10px;
+          max-height: 95vh;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .logo {
+          font-size: 1.4rem;
+        }
+
+        .balance-item {
+          padding: 8px 12px;
+        }
+
+        .balance-value {
+          font-size: 1rem;
+        }
+
+        .nav-tab {
+          padding: 10px 12px;
+          font-size: 0.85rem;
+        }
+
+        .click-card {
+          width: 260px;
+          height: 160px;
+        }
+
+        .card-content {
+          padding: 20px;
+        }
+
+        .card-icon {
+          font-size: 2rem;
+          top: 15px;
+          right: 20px;
+        }
+
+        .card-title {
+          font-size: 1.1rem;
+        }
+
+        .card-chip {
+          font-size: 1.5rem;
+          bottom: 50px;
+        }
+
+        .card-number {
+          font-size: 0.85rem;
+          bottom: 20px;
+        }
+
+        .skins-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .skin-item {
+          height: 60px;
+        }
+
+        .upgrade-card {
+          padding: 15px;
+        }
+
+        .crypto-card {
+          padding: 15px;
+        }
+
+        .shop-item-image {
+          height: 120px;
+          font-size: 3rem;
+        }
+
+        .inventory-item {
+          padding: 15px;
+        }
+
+        .inventory-icon {
+          font-size: 2.5rem;
+        }
+
+        .inv-btn {
+          padding: 8px 15px;
+          font-size: 0.9rem;
+        }
+      }
+
+      /* Fix dla iOS safe areas */
+      @supports (padding: max(0px)) {
+        body {
+          padding-left: max(0px, env(safe-area-inset-left));
+          padding-right: max(0px, env(safe-area-inset-right));
+          padding-bottom: max(0px, env(safe-area-inset-bottom));
+        }
+      }
+
+      /* Scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--bg-dark);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-dim);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-grid"></div>
+
+    <header>
+      <div class="header-content">
+        <div class="logo">CRYPTOGAME</div>
+        <div class="balance-display">
+          <div class="balance-item">
+            <div class="balance-label">Pieniądze</div>
+            <div class="balance-value" id="moneyBalance">$0</div>
+          </div>
+          <div class="balance-item">
+            <div class="balance-label">Portfolio</div>
+            <div
+              class="balance-value"
+              id="portfolioValue"
+              style="color: var(--green)"
+            >
+              ₼ 0
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav>
+      <div class="nav-tabs">
+        <button class="nav-tab active" data-section="clicker">
+          👆 Klikacz
+        </button>
+        <button class="nav-tab" data-section="market">📈 Rynek</button>
+        <button class="nav-tab" data-section="portfolio">💼 Portfolio</button>
+        <button class="nav-tab" data-section="shop">🛒 Sklep</button>
+        <button class="nav-tab" data-section="inventory">🎒 Ekwipunek</button>
+      </div>
+    </nav>
+
+    <main>
+      <!-- Clicker Section -->
+      <section class="section active" id="clicker">
+        <div class="clicker-container">
+          <div class="clicker-stats">
+            <div class="clicker-stat">
+              <span class="clicker-stat-label">Za kliknięcie</span>
+              <span class="clicker-stat-value" id="clickValue">₼ 1</span>
+            </div>
+            <div class="clicker-stat">
+              <span class="clicker-stat-label">Pasywny dochód</span>
+              <span class="clicker-stat-value" id="passiveIncome">₼ 0/s</span>
+            </div>
+            <div class="clicker-stat">
+              <span class="clicker-stat-label">Łącznie kliknięć</span>
+              <span class="clicker-stat-value" id="totalClicks">0</span>
+            </div>
+          </div>
+
+          <div class="click-card" id="clickCard">
+            <div class="card-glow"></div>
+            <div class="card-content" id="cardContent">
+              <div class="card-icon">💳</div>
+              <div class="card-title">CRYPCARD</div>
+              <div class="card-subtitle">CLICK TO EARN</div>
+              <div class="card-chip">💎</div>
+              <div class="card-number">**** **** **** 1337</div>
+            </div>
+          </div>
+
+          <div class="click-feedback" id="clickFeedback"></div>
+
+          <div class="card-skins-section">
+            <h3 class="skins-title">🎨 SKÓRKI KARTY</h3>
+            <div class="skins-grid" id="skinsGrid"></div>
+          </div>
+
+          <div class="upgrades-section">
+            <h2 class="upgrades-title">⬆️ ULEPSZENIA</h2>
+            <div class="upgrades-grid" id="upgradesGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="market">
+        <div class="search-box">
+          <input
+            type="text"
+            class="search-input"
+            placeholder="🔍 Szukaj kryptowaluty..."
+            id="cryptoSearch"
+          />
+        </div>
+        <div class="crypto-grid" id="cryptoGrid"></div>
+      </section>
+
+      <section class="section" id="portfolio">
+        <div class="portfolio-stats" id="portfolioStats"></div>
+        <div class="portfolio-table" id="portfolioTable"></div>
+      </section>
+
+      <section class="section" id="shop">
+        <div class="shop-categories">
+          <button class="category-btn active" data-category="all">
+            Wszystko
+          </button>
+          <button class="category-btn" data-category="cars">🚗 Auta</button>
+          <button class="category-btn" data-category="watches">
+            ⌚ Zegarki
+          </button>
+          <button class="category-btn" data-category="houses">🏠 Domy</button>
+          <button class="category-btn" data-category="yachts">🛥️ Jachty</button>
+          <button class="category-btn" data-category="jets">✈️ Samoloty</button>
+        </div>
+        <div class="shop-grid" id="shopGrid"></div>
+      </section>
+
+      <section class="section" id="inventory">
+        <div class="inventory-grid" id="inventoryGrid"></div>
+      </section>
+    </main>
+
+    <!-- Trading Modal -->
+    <div class="modal-overlay" id="tradingModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="crypto-icon" id="modalIcon"></div>
+            <div>
+              <div class="crypto-name" id="modalName"></div>
+              <div class="crypto-symbol" id="modalSymbol"></div>
+            </div>
+          </div>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="chart-info">
+            <div class="chart-stat">
+              <div class="chart-stat-label">Cena</div>
+              <div class="chart-stat-value" id="modalPrice"></div>
+            </div>
+            <div class="chart-stat">
+              <div class="chart-stat-label">Max 24h</div>
+              <div class="chart-stat-value high" id="modalHigh"></div>
+            </div>
+            <div class="chart-stat">
+              <div class="chart-stat-label">Min 24h</div>
+              <div class="chart-stat-value low" id="modalLow"></div>
+            </div>
+            <div class="chart-stat">
+              <div class="chart-stat-label">Zmiana</div>
+              <div class="chart-stat-value" id="modalChange"></div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="mainChart"></canvas>
+          </div>
+          <div class="trading-form">
+            <div class="trade-section buy">
+              <div class="trade-title buy">📈 Kup</div>
+              <div class="input-group">
+                <label class="input-label">Ilość</label>
+                <input
+                  type="number"
+                  class="input-field"
+                  id="buyAmount"
+                  placeholder="0.00"
+                  min="0"
+                  step="any"
+                />
+              </div>
+              <div class="trade-total">
+                <span>Razem:</span>
+                <span id="buyTotal">₼ 0</span>
+              </div>
+              <button
+                class="trade-btn buy"
+                id="buyBtn"
+                onclick="executeTrade('buy')"
+              >
+                Kup
+              </button>
+            </div>
+            <div class="trade-section sell">
+              <div class="trade-title sell">📉 Sprzedaj</div>
+              <div class="input-group">
+                <label class="input-label"
+                  >Ilość (masz: <span id="ownedAmount">0</span>)</label
+                >
+                <input
+                  type="number"
+                  class="input-field"
+                  id="sellAmount"
+                  placeholder="0.00"
+                  min="0"
+                  step="any"
+                />
+              </div>
+              <div class="trade-total">
+                <span>Otrzymasz:</span>
+                <span id="sellTotal">₼ 0</span>
+              </div>
+              <button
+                class="trade-btn sell"
+                id="sellBtn"
+                onclick="executeTrade('sell')"
+              >
+                Sprzedaj
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div class="modal-overlay" id="transferModal">
+      <div class="modal" style="max-width: 500px">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div style="font-size: 2rem">📲</div>
+            <div>
+              <div class="crypto-name">Transfer</div>
+              <div class="crypto-symbol" id="transferItemName"></div>
+            </div>
+          </div>
+          <button class="modal-close" onclick="closeTransferModal()">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body transfer-content">
+          <div id="transferMode">
+            <p class="transfer-instructions">Wybierz tryb transferu</p>
+            <button class="mode-btn" onclick="showQRCode()">📤 Wyślij</button>
+            <button class="mode-btn" onclick="startScanning()">
+              📥 Odbierz
+            </button>
+          </div>
+          <div id="qrDisplay" style="display: none">
+            <p class="transfer-instructions">
+              Pokaż ten kod QR drugiej osobie do zeskanowania
+            </p>
+            <div class="qr-container">
+              <canvas id="qrCode" width="200" height="200"></canvas>
+            </div>
+          </div>
+          <div id="scannerDisplay" style="display: none">
+            <p class="transfer-instructions">Skieruj kamerę na kod QR</p>
+            <div class="camera-preview">
+              <video id="cameraPreview" autoplay playsinline></video>
+              <div class="camera-overlay"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+      // Game State
+      let gameState = {
+        money: 0,
+        portfolio: {},
+        inventory: [],
+        clickValue: 1,
+        passiveIncome: 0,
+        totalClicks: 0,
+        upgrades: {},
+        currentSkin: "default",
+        unlockedSkins: ["default"],
+      };
+
+      // Card skins
+      const cardSkins = [
+        {
+          id: "default",
+          name: "Klasyczna",
+          price: 0,
+          gradient:
+            "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+        },
+        {
+          id: "emerald",
+          name: "Szmaragd",
+          price: 500,
+          gradient:
+            "linear-gradient(135deg, #0d4d0d 0%, #1a5c1a 50%, #2d8a2d 100%)",
+        },
+        {
+          id: "ruby",
+          name: "Rubin",
+          price: 1000,
+          gradient:
+            "linear-gradient(135deg, #4d0d0d 0%, #8b0000 50%, #cc0000 100%)",
+        },
+        {
+          id: "ocean",
+          name: "Ocean",
+          price: 2000,
+          gradient:
+            "linear-gradient(135deg, #0d2d4d 0%, #0066cc 50%, #00aaff 100%)",
+        },
+        {
+          id: "sunset",
+          name: "Zachód Słońca",
+          price: 3500,
+          gradient:
+            "linear-gradient(135deg, #ff6b35 0%, #f7931a 50%, #ffcc00 100%)",
+        },
+        {
+          id: "purple",
+          name: "Fiolet",
+          price: 5000,
+          gradient:
+            "linear-gradient(135deg, #2d0a4e 0%, #6b2fa0 50%, #9945ff 100%)",
+        },
+        {
+          id: "matrix",
+          name: "Matrix",
+          price: 10000,
+          gradient:
+            "linear-gradient(135deg, #000000 0%, #003300 50%, #00ff00 100%)",
+        },
+        {
+          id: "gold",
+          name: "Złoto",
+          price: 25000,
+          gradient:
+            "linear-gradient(135deg, #b8860b 0%, #ffd700 50%, #ffec8b 100%)",
+        },
+        {
+          id: "diamond",
+          name: "Diament",
+          price: 50000,
+          gradient:
+            "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 30%, #4dd0e1 60%, #00bcd4 100%)",
+        },
+        {
+          id: "rainbow",
+          name: "Tęcza",
+          price: 100000,
+          gradient:
+            "linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff)",
+        },
+        {
+          id: "cosmic",
+          name: "Kosmos",
+          price: 250000,
+          gradient:
+            "linear-gradient(135deg, #000428 0%, #004e92 25%, #a855f7 50%, #ec4899 75%, #000428 100%)",
+        },
+        {
+          id: "legendary",
+          name: "Legenda",
+          price: 1000000,
+          gradient:
+            "linear-gradient(135deg, #000000 0%, #1a1a1a 20%, #ffd700 40%, #ffffff 50%, #ffd700 60%, #1a1a1a 80%, #000000 100%)",
+        },
+      ];
+
+      // Upgrades definition
+      const upgrades = [
+        {
+          id: "click1",
+          name: "Lepszy Palec",
+          desc: "Zwiększa wartość kliknięcia",
+          icon: "👆",
+          type: "click",
+          baseValue: 1,
+          increment: 1,
+          baseCost: 50,
+          costMultiplier: 1.5,
+          maxLevel: 50,
+        },
+        {
+          id: "click2",
+          name: "Złota Ręka",
+          desc: "Znacznie zwiększa wartość kliknięcia",
+          icon: "🤚",
+          type: "click",
+          baseValue: 0,
+          increment: 5,
+          baseCost: 500,
+          costMultiplier: 1.6,
+          maxLevel: 30,
+        },
+        {
+          id: "click3",
+          name: "Diamentowe Palce",
+          desc: "Ogromny bonus do kliknięcia",
+          icon: "💎",
+          type: "click",
+          baseValue: 0,
+          increment: 25,
+          baseCost: 5000,
+          costMultiplier: 1.7,
+          maxLevel: 20,
+        },
+        {
+          id: "passive1",
+          name: "Auto-Klikacz",
+          desc: "Zarabia pasywnie co sekundę",
+          icon: "🤖",
+          type: "passive",
+          baseValue: 0,
+          increment: 1,
+          baseCost: 100,
+          costMultiplier: 1.4,
+          maxLevel: 50,
+        },
+        {
+          id: "passive2",
+          name: "Kopalnia Kasy",
+          desc: "Wydobywa pieniądze automatycznie",
+          icon: "⛏️",
+          type: "passive",
+          baseValue: 0,
+          increment: 5,
+          baseCost: 1000,
+          costMultiplier: 1.5,
+          maxLevel: 30,
+        },
+        {
+          id: "passive3",
+          name: "Fabryka Pieniędzy",
+          desc: "Produkuje pieniądze na masową skalę",
+          icon: "🏭",
+          type: "passive",
+          baseValue: 0,
+          increment: 25,
+          baseCost: 10000,
+          costMultiplier: 1.6,
+          maxLevel: 20,
+        },
+        {
+          id: "passive4",
+          name: "Satelita Finansowy",
+          desc: "Zbiera pieniądze z kosmosu",
+          icon: "🛰️",
+          type: "passive",
+          baseValue: 0,
+          increment: 100,
+          baseCost: 100000,
+          costMultiplier: 1.7,
+          maxLevel: 15,
+        },
+        {
+          id: "passive5",
+          name: "Portal Pieniędzy",
+          desc: "Otwiera portal do wymiaru bogactwa",
+          icon: "🌀",
+          type: "passive",
+          baseValue: 0,
+          increment: 500,
+          baseCost: 1000000,
+          costMultiplier: 1.8,
+          maxLevel: 10,
+        },
+      ];
+
+      // 100 Cryptocurrencies
+      const cryptos = [
+        {
+          id: 1,
+          name: "DogeBaby",
+          symbol: "DBABY",
+          basePrice: 0.000001,
+          color: "#f4d03f",
+        },
+        {
+          id: 2,
+          name: "SafeMoon Jr",
+          symbol: "SMJR",
+          basePrice: 0.000005,
+          color: "#3498db",
+        },
+        {
+          id: 3,
+          name: "PepeCoin",
+          symbol: "PEPE",
+          basePrice: 0.00001,
+          color: "#27ae60",
+        },
+        {
+          id: 4,
+          name: "ElonSperm",
+          symbol: "ESPERM",
+          basePrice: 0.00002,
+          color: "#e74c3c",
+        },
+        {
+          id: 5,
+          name: "Floki Inu",
+          symbol: "FLOKI",
+          basePrice: 0.00003,
+          color: "#f39c12",
+        },
+        {
+          id: 6,
+          name: "BabyDoge",
+          symbol: "BABYD",
+          basePrice: 0.00005,
+          color: "#9b59b6",
+        },
+        {
+          id: 7,
+          name: "Shiba Jr",
+          symbol: "SHIBJ",
+          basePrice: 0.00008,
+          color: "#e67e22",
+        },
+        {
+          id: 8,
+          name: "KishuInu",
+          symbol: "KISHU",
+          basePrice: 0.0001,
+          color: "#1abc9c",
+        },
+        {
+          id: 9,
+          name: "BitTorrent",
+          symbol: "BTT",
+          basePrice: 0.0002,
+          color: "#34495e",
+        },
+        {
+          id: 10,
+          name: "SafePal",
+          symbol: "SFP",
+          basePrice: 0.0003,
+          color: "#16a085",
+        },
+        {
+          id: 11,
+          name: "HogeFinance",
+          symbol: "HOGE",
+          basePrice: 0.0005,
+          color: "#d35400",
+        },
+        {
+          id: 12,
+          name: "PancakeSwap",
+          symbol: "CAKE",
+          basePrice: 0.0008,
+          color: "#c0392b",
+        },
+        {
+          id: 13,
+          name: "BONK",
+          symbol: "BONK",
+          basePrice: 0.001,
+          color: "#f1c40f",
+        },
+        {
+          id: 14,
+          name: "Wifhat",
+          symbol: "WIF",
+          basePrice: 0.002,
+          color: "#2ecc71",
+        },
+        {
+          id: 15,
+          name: "Pepe2.0",
+          symbol: "PEPE2",
+          basePrice: 0.003,
+          color: "#3498db",
+        },
+        {
+          id: 16,
+          name: "MemeCoin",
+          symbol: "MEME",
+          basePrice: 0.005,
+          color: "#9b59b6",
+        },
+        {
+          id: 17,
+          name: "Saitama",
+          symbol: "SAIT",
+          basePrice: 0.008,
+          color: "#e74c3c",
+        },
+        {
+          id: 18,
+          name: "Akita Inu",
+          symbol: "AKITA",
+          basePrice: 0.01,
+          color: "#f39c12",
+        },
+        {
+          id: 19,
+          name: "Volt Inu",
+          symbol: "VOLT",
+          basePrice: 0.015,
+          color: "#1abc9c",
+        },
+        {
+          id: 20,
+          name: "CateCoin",
+          symbol: "CATE",
+          basePrice: 0.02,
+          color: "#e67e22",
+        },
+        {
+          id: 21,
+          name: "Shibarium",
+          symbol: "SHIB2",
+          basePrice: 0.025,
+          color: "#27ae60",
+        },
+        {
+          id: 22,
+          name: "Tamadoge",
+          symbol: "TAMA",
+          basePrice: 0.03,
+          color: "#8e44ad",
+        },
+        {
+          id: 23,
+          name: "Vechain",
+          symbol: "VET",
+          basePrice: 0.04,
+          color: "#2980b9",
+        },
+        {
+          id: 24,
+          name: "Zilliqa",
+          symbol: "ZIL",
+          basePrice: 0.05,
+          color: "#16a085",
+        },
+        {
+          id: 25,
+          name: "Holo",
+          symbol: "HOT",
+          basePrice: 0.06,
+          color: "#c0392b",
+        },
+        {
+          id: 26,
+          name: "Ravencoin",
+          symbol: "RVN",
+          basePrice: 0.07,
+          color: "#d35400",
+        },
+        {
+          id: 27,
+          name: "Chiliz",
+          symbol: "CHZ",
+          basePrice: 0.08,
+          color: "#e74c3c",
+        },
+        {
+          id: 28,
+          name: "Enjin",
+          symbol: "ENJ",
+          basePrice: 0.09,
+          color: "#3498db",
+        },
+        {
+          id: 29,
+          name: "Basic Attention",
+          symbol: "BAT",
+          basePrice: 0.1,
+          color: "#f39c12",
+        },
+        {
+          id: 30,
+          name: "Gala",
+          symbol: "GALA",
+          basePrice: 0.12,
+          color: "#9b59b6",
+        },
+        {
+          id: 31,
+          name: "Loopring",
+          symbol: "LRC",
+          basePrice: 0.15,
+          color: "#1abc9c",
+        },
+        {
+          id: 32,
+          name: "Fetch.ai",
+          symbol: "FET",
+          basePrice: 0.18,
+          color: "#2ecc71",
+        },
+        {
+          id: 33,
+          name: "The Graph",
+          symbol: "GRT",
+          basePrice: 0.2,
+          color: "#8e44ad",
+        },
+        {
+          id: 34,
+          name: "Ren",
+          symbol: "REN",
+          basePrice: 0.25,
+          color: "#34495e",
+        },
+        {
+          id: 35,
+          name: "Ankr",
+          symbol: "ANKR",
+          basePrice: 0.3,
+          color: "#2980b9",
+        },
+        {
+          id: 36,
+          name: "Storj",
+          symbol: "STORJ",
+          basePrice: 0.35,
+          color: "#27ae60",
+        },
+        {
+          id: 37,
+          name: "Ocean Protocol",
+          symbol: "OCEAN",
+          basePrice: 0.4,
+          color: "#16a085",
+        },
+        {
+          id: 38,
+          name: "Celer",
+          symbol: "CELR",
+          basePrice: 0.45,
+          color: "#e67e22",
+        },
+        {
+          id: 39,
+          name: "SushiSwap",
+          symbol: "SUSHI",
+          basePrice: 0.5,
+          color: "#c0392b",
+        },
+        {
+          id: 40,
+          name: "1inch",
+          symbol: "1INCH",
+          basePrice: 0.6,
+          color: "#d35400",
+        },
+        {
+          id: 41,
+          name: "Curve",
+          symbol: "CRV",
+          basePrice: 0.7,
+          color: "#f1c40f",
+        },
+        {
+          id: 42,
+          name: "Compound",
+          symbol: "COMP",
+          basePrice: 0.8,
+          color: "#3498db",
+        },
+        {
+          id: 43,
+          name: "Yearn Finance",
+          symbol: "YFI",
+          basePrice: 0.9,
+          color: "#2ecc71",
+        },
+        {
+          id: 44,
+          name: "Synthetix",
+          symbol: "SNX",
+          basePrice: 1.0,
+          color: "#9b59b6",
+        },
+        {
+          id: 45,
+          name: "UMA",
+          symbol: "UMA",
+          basePrice: 1.2,
+          color: "#e74c3c",
+        },
+        {
+          id: 46,
+          name: "Balancer",
+          symbol: "BAL",
+          basePrice: 1.4,
+          color: "#1abc9c",
+        },
+        {
+          id: 47,
+          name: "Decentraland",
+          symbol: "MANA",
+          basePrice: 1.6,
+          color: "#f39c12",
+        },
+        {
+          id: 48,
+          name: "The Sandbox",
+          symbol: "SAND",
+          basePrice: 1.8,
+          color: "#8e44ad",
+        },
+        {
+          id: 49,
+          name: "Axie Infinity",
+          symbol: "AXS",
+          basePrice: 2.0,
+          color: "#2980b9",
+        },
+        {
+          id: 50,
+          name: "Flow",
+          symbol: "FLOW",
+          basePrice: 2.5,
+          color: "#27ae60",
+        },
+        {
+          id: 51,
+          name: "Injective",
+          symbol: "INJ",
+          basePrice: 3.0,
+          color: "#16a085",
+        },
+        {
+          id: 52,
+          name: "Sei",
+          symbol: "SEI",
+          basePrice: 3.5,
+          color: "#c0392b",
+        },
+        {
+          id: 53,
+          name: "Sui",
+          symbol: "SUI",
+          basePrice: 4.0,
+          color: "#3498db",
+        },
+        {
+          id: 54,
+          name: "Aptos",
+          symbol: "APT",
+          basePrice: 5.0,
+          color: "#e67e22",
+        },
+        {
+          id: 55,
+          name: "Render",
+          symbol: "RNDR",
+          basePrice: 6.0,
+          color: "#9b59b6",
+        },
+        {
+          id: 56,
+          name: "Arbitrum",
+          symbol: "ARB",
+          basePrice: 7.0,
+          color: "#2ecc71",
+        },
+        {
+          id: 57,
+          name: "Optimism",
+          symbol: "OP",
+          basePrice: 8.0,
+          color: "#f1c40f",
+        },
+        {
+          id: 58,
+          name: "Polygon",
+          symbol: "MATIC",
+          basePrice: 9.0,
+          color: "#8e44ad",
+        },
+        {
+          id: 59,
+          name: "Cosmos",
+          symbol: "ATOM",
+          basePrice: 10.0,
+          color: "#1abc9c",
+        },
+        {
+          id: 60,
+          name: "Near Protocol",
+          symbol: "NEAR",
+          basePrice: 12.0,
+          color: "#e74c3c",
+        },
+        {
+          id: 61,
+          name: "Internet Computer",
+          symbol: "ICP",
+          basePrice: 15.0,
+          color: "#f39c12",
+        },
+        {
+          id: 62,
+          name: "Filecoin",
+          symbol: "FIL",
+          basePrice: 18.0,
+          color: "#2980b9",
+        },
+        {
+          id: 63,
+          name: "VeChain Thor",
+          symbol: "VTHO",
+          basePrice: 20.0,
+          color: "#27ae60",
+        },
+        {
+          id: 64,
+          name: "Hedera",
+          symbol: "HBAR",
+          basePrice: 25.0,
+          color: "#34495e",
+        },
+        {
+          id: 65,
+          name: "Algorand",
+          symbol: "ALGO",
+          basePrice: 30.0,
+          color: "#16a085",
+        },
+        {
+          id: 66,
+          name: "Stellar",
+          symbol: "XLM",
+          basePrice: 35.0,
+          color: "#c0392b",
+        },
+        {
+          id: 67,
+          name: "Tezos",
+          symbol: "XTZ",
+          basePrice: 40.0,
+          color: "#d35400",
+        },
+        {
+          id: 68,
+          name: "EOS",
+          symbol: "EOS",
+          basePrice: 45.0,
+          color: "#3498db",
+        },
+        {
+          id: 69,
+          name: "IOTA",
+          symbol: "MIOTA",
+          basePrice: 50.0,
+          color: "#9b59b6",
+        },
+        {
+          id: 70,
+          name: "Tron",
+          symbol: "TRX",
+          basePrice: 60.0,
+          color: "#e74c3c",
+        },
+        {
+          id: 71,
+          name: "Cronos",
+          symbol: "CRO",
+          basePrice: 70.0,
+          color: "#1abc9c",
+        },
+        {
+          id: 72,
+          name: "Fantom",
+          symbol: "FTM",
+          basePrice: 80.0,
+          color: "#2ecc71",
+        },
+        {
+          id: 73,
+          name: "Theta",
+          symbol: "THETA",
+          basePrice: 90.0,
+          color: "#f39c12",
+        },
+        {
+          id: 74,
+          name: "Elrond",
+          symbol: "EGLD",
+          basePrice: 100.0,
+          color: "#8e44ad",
+        },
+        {
+          id: 75,
+          name: "Aave",
+          symbol: "AAVE",
+          basePrice: 120.0,
+          color: "#2980b9",
+        },
+        {
+          id: 76,
+          name: "Maker",
+          symbol: "MKR",
+          basePrice: 150.0,
+          color: "#27ae60",
+        },
+        {
+          id: 77,
+          name: "Uniswap",
+          symbol: "UNI",
+          basePrice: 180.0,
+          color: "#e67e22",
+        },
+        {
+          id: 78,
+          name: "Chainlink",
+          symbol: "LINK",
+          basePrice: 200.0,
+          color: "#3498db",
+        },
+        {
+          id: 79,
+          name: "Polkadot",
+          symbol: "DOT",
+          basePrice: 250.0,
+          color: "#e74c3c",
+        },
+        {
+          id: 80,
+          name: "Avalanche",
+          symbol: "AVAX",
+          basePrice: 300.0,
+          color: "#c0392b",
+        },
+        {
+          id: 81,
+          name: "Litecoin",
+          symbol: "LTC",
+          basePrice: 400.0,
+          color: "#bdc3c7",
+        },
+        {
+          id: 82,
+          name: "Monero",
+          symbol: "XMR",
+          basePrice: 500.0,
+          color: "#f39c12",
+        },
+        {
+          id: 83,
+          name: "Bitcoin Cash",
+          symbol: "BCH",
+          basePrice: 600.0,
+          color: "#27ae60",
+        },
+        {
+          id: 84,
+          name: "Cardano",
+          symbol: "ADA",
+          basePrice: 800.0,
+          color: "#3498db",
+        },
+        {
+          id: 85,
+          name: "Dogecoin",
+          symbol: "DOGE",
+          basePrice: 1000.0,
+          color: "#f4d03f",
+        },
+        {
+          id: 86,
+          name: "Shiba Inu",
+          symbol: "SHIB",
+          basePrice: 1500.0,
+          color: "#e74c3c",
+        },
+        {
+          id: 87,
+          name: "XRP",
+          symbol: "XRP",
+          basePrice: 2000.0,
+          color: "#2980b9",
+        },
+        {
+          id: 88,
+          name: "Toncoin",
+          symbol: "TON",
+          basePrice: 3000.0,
+          color: "#1abc9c",
+        },
+        {
+          id: 89,
+          name: "Binance Coin",
+          symbol: "BNB",
+          basePrice: 5000.0,
+          color: "#f1c40f",
+        },
+        {
+          id: 90,
+          name: "Solana",
+          symbol: "SOL",
+          basePrice: 8000.0,
+          color: "#9b59b6",
+        },
+        {
+          id: 91,
+          name: "Ethereum Classic",
+          symbol: "ETC",
+          basePrice: 10000.0,
+          color: "#27ae60",
+        },
+        {
+          id: 92,
+          name: "Wrapped Bitcoin",
+          symbol: "WBTC",
+          basePrice: 15000.0,
+          color: "#f39c12",
+        },
+        {
+          id: 93,
+          name: "Staked ETH",
+          symbol: "STETH",
+          basePrice: 20000.0,
+          color: "#3498db",
+        },
+        {
+          id: 94,
+          name: "Ethereum",
+          symbol: "ETH",
+          basePrice: 30000.0,
+          color: "#627eea",
+        },
+        {
+          id: 95,
+          name: "Bitcoin Gold",
+          symbol: "BTG",
+          basePrice: 40000.0,
+          color: "#f4d03f",
+        },
+        {
+          id: 96,
+          name: "Bitcoin SV",
+          symbol: "BSV",
+          basePrice: 50000.0,
+          color: "#e74c3c",
+        },
+        {
+          id: 97,
+          name: "Bitcoin Diamond",
+          symbol: "BCD",
+          basePrice: 60000.0,
+          color: "#1abc9c",
+        },
+        {
+          id: 98,
+          name: "Bitcoin",
+          symbol: "BTC",
+          basePrice: 80000.0,
+          color: "#f7931a",
+        },
+        {
+          id: 99,
+          name: "Bitcoin 2.0",
+          symbol: "BTC2",
+          basePrice: 100000.0,
+          color: "#9b59b6",
+        },
+        {
+          id: 100,
+          name: "Satoshi Vision",
+          symbol: "SAT",
+          basePrice: 150000.0,
+          color: "#ffd700",
+        },
+      ];
+
+      // Shop items
+      const shopItems = [
+        {
+          id: 1,
+          name: "Fiat Punto",
+          cat: "cars",
+          price: 5000,
+          emoji: "🚗",
+          desc: "Klasyk",
+        },
+        {
+          id: 2,
+          name: "VW Golf",
+          cat: "cars",
+          price: 15000,
+          emoji: "🚙",
+          desc: "Niezawodny",
+        },
+        {
+          id: 3,
+          name: "BMW 3",
+          cat: "cars",
+          price: 50000,
+          emoji: "🚘",
+          desc: "Niemiecka precyzja",
+        },
+        {
+          id: 4,
+          name: "Mercedes C",
+          cat: "cars",
+          price: 80000,
+          emoji: "🚗",
+          desc: "Luksus",
+        },
+        {
+          id: 5,
+          name: "Porsche 911",
+          cat: "cars",
+          price: 200000,
+          emoji: "🏎️",
+          desc: "Legenda",
+        },
+        {
+          id: 6,
+          name: "Ferrari F8",
+          cat: "cars",
+          price: 500000,
+          emoji: "🏎️",
+          desc: "Włoska pasja",
+        },
+        {
+          id: 7,
+          name: "Lamborghini",
+          cat: "cars",
+          price: 800000,
+          emoji: "🏎️",
+          desc: "Szybkość i styl",
+        },
+        {
+          id: 8,
+          name: "Bugatti Chiron",
+          cat: "cars",
+          price: 3000000,
+          emoji: "🏎️",
+          desc: "Hiperkocica",
+        },
+        {
+          id: 9,
+          name: "Rolls-Royce",
+          cat: "cars",
+          price: 1000000,
+          emoji: "🚙",
+          desc: "Królewskie",
+        },
+        {
+          id: 10,
+          name: "Casio F-91W",
+          cat: "watches",
+          price: 500,
+          emoji: "⌚",
+          desc: "Legenda",
+        },
+        {
+          id: 11,
+          name: "Seiko Presage",
+          cat: "watches",
+          price: 3000,
+          emoji: "⌚",
+          desc: "Elegancja",
+        },
+        {
+          id: 12,
+          name: "TAG Heuer",
+          cat: "watches",
+          price: 30000,
+          emoji: "⌚",
+          desc: "Sportowy luksus",
+        },
+        {
+          id: 13,
+          name: "Omega",
+          cat: "watches",
+          price: 50000,
+          emoji: "⌚",
+          desc: "Astronautów",
+        },
+        {
+          id: 14,
+          name: "Rolex",
+          cat: "watches",
+          price: 100000,
+          emoji: "⌚",
+          desc: "Submariner",
+        },
+        {
+          id: 15,
+          name: "Patek Philippe",
+          cat: "watches",
+          price: 500000,
+          emoji: "⌚",
+          desc: "Dziedzictwo",
+        },
+        {
+          id: 16,
+          name: "Richard Mille",
+          cat: "watches",
+          price: 1000000,
+          emoji: "⌚",
+          desc: "F1 tech",
+        },
+        {
+          id: 17,
+          name: "Kawalerka",
+          cat: "houses",
+          price: 50000,
+          emoji: "🏠",
+          desc: "Własne M",
+        },
+        {
+          id: 18,
+          name: "Mieszkanie",
+          cat: "houses",
+          price: 150000,
+          emoji: "🏠",
+          desc: "3 pokoje",
+        },
+        {
+          id: 19,
+          name: "Dom",
+          cat: "houses",
+          price: 500000,
+          emoji: "🏡",
+          desc: "Z ogrodem",
+        },
+        {
+          id: 20,
+          name: "Willa",
+          cat: "houses",
+          price: 2000000,
+          emoji: "🏡",
+          desc: "Z basenem",
+        },
+        {
+          id: 21,
+          name: "Penthouse",
+          cat: "houses",
+          price: 5000000,
+          emoji: "🏙️",
+          desc: "Na szczycie",
+        },
+        {
+          id: 22,
+          name: "Rezydencja",
+          cat: "houses",
+          price: 15000000,
+          emoji: "🏰",
+          desc: "Posiadłość",
+        },
+        {
+          id: 23,
+          name: "Wyspa",
+          cat: "houses",
+          price: 100000000,
+          emoji: "🏝️",
+          desc: "Prywatna",
+        },
+        {
+          id: 24,
+          name: "Łódź",
+          cat: "yachts",
+          price: 30000,
+          emoji: "🚤",
+          desc: "Motorowa",
+        },
+        {
+          id: 25,
+          name: "Jacht żaglowy",
+          cat: "yachts",
+          price: 100000,
+          emoji: "⛵",
+          desc: "Białe żagle",
+        },
+        {
+          id: 26,
+          name: "Jacht 20m",
+          cat: "yachts",
+          price: 500000,
+          emoji: "🛥️",
+          desc: "Luksusowy",
+        },
+        {
+          id: 27,
+          name: "Superjacht",
+          cat: "yachts",
+          price: 5000000,
+          emoji: "🛥️",
+          desc: "30 metrów",
+        },
+        {
+          id: 28,
+          name: "Megajacht",
+          cat: "yachts",
+          price: 50000000,
+          emoji: "🛳️",
+          desc: "Z helikopterem",
+        },
+        {
+          id: 29,
+          name: "Cessna",
+          cat: "jets",
+          price: 200000,
+          emoji: "🛩️",
+          desc: "Pierwszy samolot",
+        },
+        {
+          id: 30,
+          name: "Pilatus",
+          cat: "jets",
+          price: 2000000,
+          emoji: "🛩️",
+          desc: "Turbośmigłowy",
+        },
+        {
+          id: 31,
+          name: "Embraer",
+          cat: "jets",
+          price: 8000000,
+          emoji: "✈️",
+          desc: "Odrzutowiec",
+        },
+        {
+          id: 32,
+          name: "Gulfstream",
+          cat: "jets",
+          price: 70000000,
+          emoji: "✈️",
+          desc: "Transatlantyk",
+        },
+        {
+          id: 33,
+          name: "Boeing BBJ",
+          cat: "jets",
+          price: 150000000,
+          emoji: "🛫",
+          desc: "Prywatny Boeing",
+        },
+      ];
+
+      let priceHistory = {};
+      let currentPrices = {};
+      let selectedCrypto = null;
+      let currentTransferItem = null;
+      let videoStream = null;
+
+      // Format number
+      function fmt(n, d = 2) {
+        if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
+        if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
+        if (n >= 1e3) return (n / 1e3).toFixed(2) + "K";
+        if (n < 0.0001) return n.toFixed(8);
+        if (n < 1) return n.toFixed(4);
+        return n.toFixed(d);
+      }
+
+      function fmtPrice(p) {
+        return "$ " + fmt(p);
+      }
+
+      // Initialize prices
+      function initPrices() {
+        cryptos.forEach((c) => {
+          const hist = [];
+          let p = c.basePrice;
+          for (let i = 0; i < 50; i++) {
+            p *= 1 + (Math.random() - 0.5) * 0.2;
+            p = Math.max(p, c.basePrice * 0.1);
+            hist.push(p);
+          }
+          priceHistory[c.id] = hist;
+          currentPrices[c.id] = hist[hist.length - 1];
+        });
+      }
+
+      // Update prices
+      function updatePrices() {
+        cryptos.forEach((c) => {
+          const hist = priceHistory[c.id];
+          let p = hist[hist.length - 1];
+          const vol = 0.05 + Math.random() * 0.1;
+          p *= 1 + (Math.random() - 0.5) * vol;
+          p = Math.max(p, c.basePrice * 0.1);
+          p = Math.min(p, c.basePrice * 10);
+          hist.push(p);
+          if (hist.length > 50) hist.shift();
+          currentPrices[c.id] = p;
+        });
+        renderCryptos();
+        updatePortfolio();
+        if (selectedCrypto) updateModal();
+      }
+
+      function getChange(id) {
+        const h = priceHistory[id];
+        if (h.length < 2) return 0;
+        return ((h[h.length - 1] - h[0]) / h[0]) * 100;
+      }
+
+      function getHighLow(id) {
+        const h = priceHistory[id];
+        return { high: Math.max(...h), low: Math.min(...h) };
+      }
+
+      // Render cryptos
+      function renderCryptos() {
+        const grid = document.getElementById("cryptoGrid");
+        const search = document
+          .getElementById("cryptoSearch")
+          .value.toLowerCase();
+
+        const filtered = cryptos.filter(
+          (c) =>
+            c.name.toLowerCase().includes(search) ||
+            c.symbol.toLowerCase().includes(search)
+        );
+
+        grid.innerHTML = filtered
+          .map((c) => {
+            const p = currentPrices[c.id];
+            const ch = getChange(c.id);
+            const pos = ch >= 0;
+
+            return `
+                    <div class="crypto-card" onclick="openModal(${c.id})">
+                        <div class="crypto-header">
+                            <div class="crypto-info">
+                                <div class="crypto-icon" style="background:${
+                                  c.color
+                                }">${c.symbol.slice(0, 2)}</div>
+                                <div>
+                                    <div class="crypto-name">${c.name}</div>
+                                    <div class="crypto-symbol">${c.symbol}</div>
+                                </div>
+                            </div>
+                            <div class="crypto-rank">#${c.id}</div>
+                        </div>
+                        <div class="crypto-price">${fmtPrice(p)}</div>
+                        <div class="crypto-change ${
+                          pos ? "positive" : "negative"
+                        }">
+                            ${pos ? "▲" : "▼"} ${Math.abs(ch).toFixed(2)}%
+                        </div>
+                        <div class="mini-chart"><canvas id="mc${
+                          c.id
+                        }"></canvas></div>
+                    </div>
+                `;
+          })
+          .join("");
+
+        filtered.forEach((c) => drawMiniChart(c.id));
+      }
+
+      // Draw mini chart
+      function drawMiniChart(id) {
+        const canvas = document.getElementById(`mc${id}`);
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const h = priceHistory[id];
+
+        canvas.width = canvas.offsetWidth * 2;
+        canvas.height = canvas.offsetHeight * 2;
+        ctx.scale(2, 2);
+
+        const w = canvas.offsetWidth,
+          ht = canvas.offsetHeight;
+        const min = Math.min(...h),
+          max = Math.max(...h),
+          range = max - min || 1;
+
+        ctx.beginPath();
+        ctx.strokeStyle = h[h.length - 1] >= h[0] ? "#00ff88" : "#ff3366";
+        ctx.lineWidth = 2;
+
+        h.forEach((p, i) => {
+          const x = (i / (h.length - 1)) * w;
+          const y = ht - ((p - min) / range) * ht;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        const grad = ctx.createLinearGradient(0, 0, 0, ht);
+        grad.addColorStop(
+          0,
+          h[h.length - 1] >= h[0]
+            ? "rgba(0,255,136,0.3)"
+            : "rgba(255,51,102,0.3)"
+        );
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.lineTo(w, ht);
+        ctx.lineTo(0, ht);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+
+      // Open modal
+      function openModal(id) {
+        selectedCrypto = cryptos.find((c) => c.id === id);
+        document.getElementById("modalIcon").innerHTML =
+          selectedCrypto.symbol.slice(0, 2);
+        document.getElementById("modalIcon").style.background =
+          selectedCrypto.color;
+        document.getElementById("modalName").textContent = selectedCrypto.name;
+        document.getElementById("modalSymbol").textContent =
+          selectedCrypto.symbol;
+
+        updateModal();
+        document.getElementById("tradingModal").classList.add("active");
+
+        document.getElementById("buyAmount").oninput = updateBuyTotal;
+        document.getElementById("sellAmount").oninput = updateSellTotal;
+
+        setTimeout(drawMainChart, 100);
+      }
+
+      function updateModal() {
+        if (!selectedCrypto) return;
+        const p = currentPrices[selectedCrypto.id];
+        const ch = getChange(selectedCrypto.id);
+        const { high, low } = getHighLow(selectedCrypto.id);
+        const owned = gameState.portfolio[selectedCrypto.id] || 0;
+
+        document.getElementById("modalPrice").textContent = fmtPrice(p);
+        document.getElementById("modalHigh").textContent = fmtPrice(high);
+        document.getElementById("modalLow").textContent = fmtPrice(low);
+
+        const chEl = document.getElementById("modalChange");
+        chEl.textContent = `${ch >= 0 ? "+" : ""}${ch.toFixed(2)}%`;
+        chEl.style.color = ch >= 0 ? "var(--green)" : "var(--red)";
+
+        document.getElementById("ownedAmount").textContent = fmt(owned, 8);
+        updateBuyTotal();
+        updateSellTotal();
+      }
+
+      function updateBuyTotal() {
+        const amt = parseFloat(document.getElementById("buyAmount").value) || 0;
+        const total = amt * currentPrices[selectedCrypto.id];
+        document.getElementById("buyTotal").textContent = fmtPrice(total);
+        document.getElementById("buyBtn").disabled =
+          total > gameState.money || amt <= 0;
+      }
+
+      function updateSellTotal() {
+        const amt =
+          parseFloat(document.getElementById("sellAmount").value) || 0;
+        const total = amt * currentPrices[selectedCrypto.id];
+        const owned = gameState.portfolio[selectedCrypto.id] || 0;
+        document.getElementById("sellTotal").textContent = fmtPrice(total);
+        document.getElementById("sellBtn").disabled = amt > owned || amt <= 0;
+      }
+
+      // Draw main chart
+      function drawMainChart() {
+        const canvas = document.getElementById("mainChart");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const h = priceHistory[selectedCrypto.id];
+
+        const container = canvas.parentElement;
+        canvas.width = container.offsetWidth * 2;
+        canvas.height = container.offsetHeight * 2;
+        ctx.scale(2, 2);
+
+        const w = container.offsetWidth,
+          ht = container.offsetHeight;
+        const pad = 40;
+        const min = Math.min(...h),
+          max = Math.max(...h),
+          range = max - min || 1;
+
+        ctx.fillStyle = "transparent";
+        ctx.fillRect(0, 0, w, ht);
+
+        // Grid
+        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const y = pad + (i / 4) * (ht - pad * 2);
+          ctx.beginPath();
+          ctx.moveTo(pad, y);
+          ctx.lineTo(w - pad, y);
+          ctx.stroke();
+        }
+
+        // Line
+        const pos = h[h.length - 1] >= h[0];
+        ctx.beginPath();
+        ctx.strokeStyle = pos ? "#00ff88" : "#ff3366";
+        ctx.lineWidth = 3;
+
+        const cw = w - pad * 2,
+          ch = ht - pad * 2;
+        h.forEach((p, i) => {
+          const x = pad + (i / (h.length - 1)) * cw;
+          const y = pad + (1 - (p - min) / range) * ch;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Fill
+        const grad = ctx.createLinearGradient(0, pad, 0, ht - pad);
+        grad.addColorStop(
+          0,
+          pos ? "rgba(0,255,136,0.3)" : "rgba(255,51,102,0.3)"
+        );
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.lineTo(pad + cw, ht - pad);
+        ctx.lineTo(pad, ht - pad);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+
+      // Trade
+      function executeTrade(type) {
+        const input = document.getElementById(
+          type === "buy" ? "buyAmount" : "sellAmount"
+        );
+        const amt = parseFloat(input.value) || 0;
+        const p = currentPrices[selectedCrypto.id];
+        const total = amt * p;
+
+        if (type === "buy") {
+          if (total > gameState.money)
+            return notify("Za mało pieniędzy!", "error");
+          gameState.money -= total;
+          gameState.portfolio[selectedCrypto.id] =
+            (gameState.portfolio[selectedCrypto.id] || 0) + amt;
+          notify(`Kupiono ${fmt(amt)} ${selectedCrypto.symbol}`, "success");
+        } else {
+          const owned = gameState.portfolio[selectedCrypto.id] || 0;
+          if (amt > owned) return notify("Nie masz tyle!", "error");
+          gameState.money += total;
+          gameState.portfolio[selectedCrypto.id] -= amt;
+          if (gameState.portfolio[selectedCrypto.id] <= 0)
+            delete gameState.portfolio[selectedCrypto.id];
+          notify(`Sprzedano ${fmt(amt)} ${selectedCrypto.symbol}`, "success");
+        }
+
+        input.value = "";
+        updateUI();
+        updateModal();
+        saveGame();
+      }
+
+      function closeModal() {
+        document.getElementById("tradingModal").classList.remove("active");
+        selectedCrypto = null;
+      }
+
+      // Portfolio
+      function updatePortfolio() {
+        let totalVal = 0;
+        const holdings = Object.entries(gameState.portfolio)
+          .map(([id, amt]) => {
+            const c = cryptos.find((x) => x.id === parseInt(id));
+            const p = currentPrices[id];
+            const val = amt * p;
+            totalVal += val;
+            return { c, amt, val, p, ch: getChange(parseInt(id)) };
+          })
+          .sort((a, b) => b.val - a.val);
+
+        document.getElementById("portfolioStats").innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value" style="color:var(--gold)">${fmtPrice(
+                      gameState.money
+                    )}</div>
+                    <div class="stat-label">Dostępne Pieniądze</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" style="color:var(--green)">${fmtPrice(
+                      totalVal
+                    )}</div>
+                    <div class="stat-label">Wartość Krypto</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-value" style="color:var(--blue)">${fmtPrice(
+                      gameState.money + totalVal
+                    )}</div>
+                    <div class="stat-label">Łącznie</div>
+                </div>
+            `;
+
+        if (holdings.length === 0) {
+          document.getElementById("portfolioTable").innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>Brak kryptowalut. Idź na Rynek!</p>
+                    </div>
+                `;
+        } else {
+          document.getElementById("portfolioTable").innerHTML = `
+                    <div class="table-header">
+                        <div>Krypto</div>
+                        <div>Ilość</div>
+                        <div>Wartość</div>
+                        <div>Zmiana</div>
+                    </div>
+                    ${holdings
+                      .map(
+                        (h) => `
+                        <div class="table-row" onclick="openModal(${h.c.id})">
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <div class="crypto-icon" style="background:${
+                                  h.c.color
+                                };width:35px;height:35px;font-size:0.75rem">${h.c.symbol.slice(
+                          0,
+                          2
+                        )}</div>
+                                <div>
+                                    <div style="font-weight:600">${
+                                      h.c.name
+                                    }</div>
+                                    <div style="color:var(--text-dim);font-size:0.85rem">${
+                                      h.c.symbol
+                                    }</div>
+                                </div>
+                            </div>
+                            <div style="font-family:'Orbitron'">${fmt(
+                              h.amt,
+                              8
+                            )}</div>
+                            <div style="color:var(--gold)">${fmtPrice(
+                              h.val
+                            )}</div>
+                            <div style="color:${
+                              h.ch >= 0 ? "var(--green)" : "var(--red)"
+                            }">
+                                ${h.ch >= 0 ? "▲" : "▼"} ${Math.abs(
+                          h.ch
+                        ).toFixed(2)}%
+                            </div>
+                        </div>
+                    `
+                      )
+                      .join("")}
+                `;
+        }
+
+        document.getElementById("portfolioValue").textContent =
+          fmtPrice(totalVal);
+      }
+
+      // Shop
+      function renderShop(cat = "all") {
+        const grid = document.getElementById("shopGrid");
+        const items =
+          cat === "all" ? shopItems : shopItems.filter((i) => i.cat === cat);
+
+        grid.innerHTML = items
+          .map((item) => {
+            const owned = gameState.inventory.some((i) => i.id === item.id);
+            const canBuy = gameState.money >= item.price;
+
+            return `
+                    <div class="shop-item">
+                        <div class="shop-item-image">${item.emoji}</div>
+                        <div class="shop-item-content">
+                            <div class="shop-item-name">${item.name}</div>
+                            <div class="shop-item-desc">${item.desc}</div>
+                            <div class="shop-item-price">$ ${fmt(
+                              item.price
+                            )}</div>
+                            <button class="shop-btn ${owned ? "owned" : ""}" 
+                                onclick="buyItem(${item.id})"
+                                ${owned || !canBuy ? "disabled" : ""}>
+                                ${owned ? "✓ Masz" : canBuy ? "Kup" : "Za mało"}
+                            </button>
+                        </div>
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      function buyItem(id) {
+        const item = shopItems.find((i) => i.id === id);
+        if (!item || gameState.money < item.price)
+          return notify("Za mało pieniędzy!", "error");
+        if (gameState.inventory.some((i) => i.id === id))
+          return notify("Już masz!", "error");
+
+        gameState.money -= item.price;
+        gameState.inventory.push({ ...item, bought: Date.now() });
+        notify(`Kupiono ${item.name}!`, "success");
+        updateUI();
+        saveGame();
+      }
+
+      // Inventory
+      function renderInventory() {
+        const grid = document.getElementById("inventoryGrid");
+
+        let html = `
+                <div class="receive-section">
+                    <button class="receive-btn" onclick="openReceiveModal()">📥 Odbierz przedmiot przez QR</button>
+                </div>
+            `;
+
+        if (gameState.inventory.length === 0) {
+          html += `
+                    <div class="empty-state" style="grid-column:1/-1">
+                        <div class="empty-icon">🎒</div>
+                        <p>Pusty ekwipunek. Idź do Sklepu!</p>
+                    </div>
+                `;
+        } else {
+          html += gameState.inventory
+            .map((item) => {
+              const shop = shopItems.find((s) => s.id === item.id);
+              const val = Math.floor(shop.price * (0.7 + Math.random() * 0.4));
+
+              return `
+                        <div class="inventory-item">
+                            <div class="inventory-icon">${item.emoji}</div>
+                            <div class="inventory-name">${item.name}</div>
+                            <div class="inventory-value">$ ${fmt(val)}</div>
+                            <div>
+                                <button class="inv-btn sell-btn" onclick="sellItem(${
+                                  item.id
+                                }, ${val})">Sprzedaj</button>
+                                <button class="inv-btn transfer-btn" onclick="openTransfer(${
+                                  item.id
+                                })">📲 Wyślij</button>
+                            </div>
+                        </div>
+                    `;
+            })
+            .join("");
+        }
+
+        grid.innerHTML = html;
+      }
+
+      function sellItem(id, val) {
+        const idx = gameState.inventory.findIndex((i) => i.id === id);
+        if (idx === -1) return;
+        const item = gameState.inventory[idx];
+        gameState.money += val;
+        gameState.inventory.splice(idx, 1);
+        notify(`Sprzedano ${item.name} za $ ${fmt(val)}!`, "success");
+        updateUI();
+        saveGame();
+      }
+
+      // Transfer
+      function openTransfer(id) {
+        currentTransferItem = gameState.inventory.find((i) => i.id === id);
+        if (!currentTransferItem) return;
+
+        document.getElementById("transferItemName").textContent =
+          currentTransferItem.name;
+        document.getElementById("transferMode").style.display = "block";
+        document.getElementById("qrDisplay").style.display = "none";
+        document.getElementById("scannerDisplay").style.display = "none";
+        document.getElementById("transferModal").classList.add("active");
+      }
+
+      function closeTransferModal() {
+        document.getElementById("transferModal").classList.remove("active");
+        stopCamera();
+        currentTransferItem = null;
+      }
+
+      function openReceiveModal() {
+        document.getElementById("transferItemName").textContent =
+          "Skanuj kod QR";
+        document.getElementById("transferMode").style.display = "none";
+        document.getElementById("qrDisplay").style.display = "none";
+        document.getElementById("scannerDisplay").style.display = "block";
+        document.getElementById("transferModal").classList.add("active");
+        startScanning();
+      }
+
+      function showQRCode() {
+        if (!currentTransferItem) return;
+        document.getElementById("transferMode").style.display = "none";
+        document.getElementById("qrDisplay").style.display = "block";
+
+        const data = {
+          type: "CRYPTOGAME",
+          item: currentTransferItem,
+          ts: Date.now(),
+          id: Math.random().toString(36).slice(2),
+        };
+
+        QRCode.toCanvas(
+          document.getElementById("qrCode"),
+          JSON.stringify(data),
+          {
+            width: 200,
+            margin: 2,
+            color: { dark: "#000", light: "#fff" },
+          }
+        );
+      }
+
+      async function startScanning() {
+        document.getElementById("transferMode").style.display = "none";
+        document.getElementById("scannerDisplay").style.display = "block";
+
+        try {
+          videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+          });
+          document.getElementById("cameraPreview").srcObject = videoStream;
+          notify("Kamera aktywna - szukam kodu QR...", "success");
+        } catch (e) {
+          notify("Brak dostępu do kamery", "error");
+          closeTransferModal();
+        }
+      }
+
+      function stopCamera() {
+        if (videoStream) {
+          videoStream.getTracks().forEach((t) => t.stop());
+          videoStream = null;
+        }
+      }
+
+      // Notify
+      function notify(msg, type = "success") {
+        const el = document.createElement("div");
+        el.className = `notification ${type}`;
+        el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+      }
+
+      // UI
+      function updateUI() {
+        document.getElementById("moneyBalance").textContent = fmtPrice(
+          gameState.money
+        );
+        updateClickerStats();
+        updatePortfolio();
+        const cat =
+          document.querySelector(".category-btn.active")?.dataset.category ||
+          "all";
+        renderShop(cat);
+        renderInventory();
+        renderUpgrades();
+        renderSkins();
+      }
+
+      // Save/Load
+      function saveGame() {
+        localStorage.setItem("cryptoGame", JSON.stringify(gameState));
+      }
+
+      function loadGame() {
+        const saved = localStorage.getItem("cryptoGame");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // Migracja ze starego formatu (mamona -> money)
+          if (parsed.mamona !== undefined && parsed.money === undefined) {
+            parsed.money = parsed.mamona;
+            delete parsed.mamona;
+          }
+          gameState = { ...gameState, ...parsed };
+          gameState.clickValue = calculateClickValue();
+          gameState.passiveIncome = calculatePassiveIncome();
+          if (!gameState.unlockedSkins) gameState.unlockedSkins = ["default"];
+          if (!gameState.currentSkin) gameState.currentSkin = "default";
+        }
+      }
+
+      // Navigation
+      document.querySelectorAll(".nav-tab").forEach((tab) => {
+        tab.onclick = () => {
+          document
+            .querySelectorAll(".nav-tab")
+            .forEach((t) => t.classList.remove("active"));
+          document
+            .querySelectorAll(".section")
+            .forEach((s) => s.classList.remove("active"));
+          tab.classList.add("active");
+          document.getElementById(tab.dataset.section).classList.add("active");
+        };
+      });
+
+      document.querySelectorAll(".category-btn").forEach((btn) => {
+        btn.onclick = () => {
+          document
+            .querySelectorAll(".category-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          renderShop(btn.dataset.category);
+        };
+      });
+
+      document.getElementById("cryptoSearch").oninput = renderCryptos;
+
+      // Clicker functions
+      function setupClicker() {
+        const card = document.getElementById("clickCard");
+        card.addEventListener("click", handleClick);
+        card.addEventListener("touchstart", handleClick, { passive: true });
+        renderUpgrades();
+        renderSkins();
+        applyCardSkin();
+        updateClickerStats();
+      }
+
+      function handleClick(e) {
+        e.preventDefault();
+
+        gameState.money += gameState.clickValue;
+        gameState.totalClicks++;
+
+        showClickPopup();
+        updateUI();
+        saveGame();
+      }
+
+      function showClickPopup() {
+        const feedback = document.getElementById("clickFeedback");
+        const popup = document.createElement("div");
+        popup.className = "click-popup";
+        popup.textContent = "+$ " + fmt(gameState.clickValue);
+        popup.style.left = 40 + Math.random() * 20 + "%";
+        feedback.appendChild(popup);
+
+        setTimeout(() => popup.remove(), 800);
+      }
+
+      function calculateClickValue() {
+        let value = 1;
+        upgrades.forEach((u) => {
+          if (u.type === "click") {
+            const level = gameState.upgrades[u.id] || 0;
+            value += u.increment * level;
+          }
+        });
+        return value;
+      }
+
+      function calculatePassiveIncome() {
+        let income = 0;
+        upgrades.forEach((u) => {
+          if (u.type === "passive") {
+            const level = gameState.upgrades[u.id] || 0;
+            income += u.increment * level;
+          }
+        });
+        return income;
+      }
+
+      function getUpgradeCost(upgrade) {
+        const level = gameState.upgrades[upgrade.id] || 0;
+        return Math.floor(
+          upgrade.baseCost * Math.pow(upgrade.costMultiplier, level)
+        );
+      }
+
+      function buyUpgrade(upgradeId) {
+        const upgrade = upgrades.find((u) => u.id === upgradeId);
+        if (!upgrade) return;
+
+        const level = gameState.upgrades[upgrade.id] || 0;
+        if (level >= upgrade.maxLevel) return;
+
+        const cost = getUpgradeCost(upgrade);
+        if (gameState.money < cost) return;
+
+        gameState.money -= cost;
+        gameState.upgrades[upgrade.id] = level + 1;
+
+        gameState.clickValue = calculateClickValue();
+        gameState.passiveIncome = calculatePassiveIncome();
+
+        notify(`Ulepszono ${upgrade.name} do poziomu ${level + 1}!`, "success");
+        updateUI();
+        renderUpgrades();
+        saveGame();
+      }
+
+      function renderUpgrades() {
+        const grid = document.getElementById("upgradesGrid");
+
+        grid.innerHTML = upgrades
+          .map((u) => {
+            const level = gameState.upgrades[u.id] || 0;
+            const cost = getUpgradeCost(u);
+            const maxed = level >= u.maxLevel;
+            const canBuy = gameState.money >= cost && !maxed;
+            const effect =
+              u.type === "click"
+                ? `+$ ${u.increment * level} za klik`
+                : `+$ ${u.increment * level}/s`;
+
+            return `
+                    <div class="upgrade-card ${maxed ? "maxed" : ""}">
+                        <div class="upgrade-header">
+                            <div style="display:flex;align-items:center">
+                                <span class="upgrade-icon">${u.icon}</span>
+                                <div>
+                                    <div class="upgrade-name">${u.name}</div>
+                                    <div class="upgrade-desc">${u.desc}</div>
+                                </div>
+                            </div>
+                            <span class="upgrade-level ${maxed ? "max" : ""}">${
+              maxed ? "MAX" : "Lv." + level
+            }</span>
+                        </div>
+                        <div class="upgrade-effect">${effect}</div>
+                        <button class="upgrade-btn ${maxed ? "maxed" : ""}" 
+                                onclick="buyUpgrade('${u.id}')"
+                                ${!canBuy ? "disabled" : ""}>
+                            ${
+                              maxed
+                                ? "✓ MAKSYMALNY"
+                                : `Ulepsz za $ ${fmt(cost)}`
+                            }
+                        </button>
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      function updateClickerStats() {
+        document.getElementById("clickValue").textContent =
+          "$ " + fmt(gameState.clickValue);
+        document.getElementById("passiveIncome").textContent =
+          "$ " + fmt(gameState.passiveIncome) + "/s";
+        document.getElementById("totalClicks").textContent = fmt(
+          gameState.totalClicks,
+          0
+        );
+      }
+
+      function passiveTick() {
+        if (gameState.passiveIncome > 0) {
+          gameState.money += gameState.passiveIncome;
+          updateUI();
+          saveGame();
+        }
+      }
+
+      // Card skins functions
+      function renderSkins() {
+        const grid = document.getElementById("skinsGrid");
+
+        grid.innerHTML = cardSkins
+          .map((skin) => {
+            const owned = gameState.unlockedSkins.includes(skin.id);
+            const active = gameState.currentSkin === skin.id;
+
+            return `
+                    <div class="skin-item ${active ? "active" : ""} ${
+              !owned ? "locked" : ""
+            }"
+                         style="background: ${skin.gradient}"
+                         onclick="${
+                           owned
+                             ? `selectSkin('${skin.id}')`
+                             : `buySkin('${skin.id}')`
+                         }">
+                        <span class="skin-name">${skin.name}</span>
+                        ${
+                          !owned
+                            ? `<span class="skin-price">$${fmt(
+                                skin.price
+                              )}</span>`
+                            : ""
+                        }
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      function selectSkin(skinId) {
+        if (!gameState.unlockedSkins.includes(skinId)) return;
+
+        gameState.currentSkin = skinId;
+        applyCardSkin();
+        renderSkins();
+        saveGame();
+      }
+
+      function buySkin(skinId) {
+        const skin = cardSkins.find((s) => s.id === skinId);
+        if (!skin) return;
+
+        if (gameState.money < skin.price) {
+          notify("Za mało pieniędzy!", "error");
+          return;
+        }
+
+        gameState.money -= skin.price;
+        gameState.unlockedSkins.push(skinId);
+        gameState.currentSkin = skinId;
+
+        applyCardSkin();
+        notify(`Odblokowano skórkę "${skin.name}"!`, "success");
+        updateUI();
+        saveGame();
+      }
+
+      function applyCardSkin() {
+        const skin = cardSkins.find((s) => s.id === gameState.currentSkin);
+        if (skin) {
+          document.getElementById("cardContent").style.background =
+            skin.gradient;
+        }
+      }
+
+      document.querySelectorAll(".modal-overlay").forEach((o) => {
+        o.onclick = (e) => {
+          if (e.target === o) {
+            o.classList.remove("active");
+            stopCamera();
+          }
+        };
+      });
+
+      // Init
+      function init() {
+        loadGame();
+        initPrices();
+        setupClicker();
+        renderCryptos();
+        updateUI();
+        setInterval(updatePrices, 3000);
+        setInterval(() => {
+          if (selectedCrypto) drawMainChart();
+        }, 3000);
+        setInterval(passiveTick, 1000);
+      }
+
+      init();
+    </script>
+  </body>
+</html>
